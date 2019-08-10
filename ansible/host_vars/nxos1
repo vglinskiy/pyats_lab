@@ -1,0 +1,40 @@
+ansible_ssh_host: 127.0.0.1
+ansible_ssh_port: 4822
+ansible_ssh_user: admin
+ansible_ssh_pass: admin
+ansible_network_os: nxos
+ansible_connection: network_cli
+
+nxapi:
+  andible_connection: httpapi
+  ansible_httpapi_port: 8880
+  ansible_httpapi_validate_certs: False 
+
+interfaces:
+ - name: loopback0
+   ipv4: 192.0.2.1
+   prefix_len: 32
+ - name: Ethernet1/1
+   ipv4: 192.0.2.128
+   prefix_len: 31
+ - name: Ethernet1/2
+   ipv4: 192.0.2.130
+   prefix_len: 31
+
+protocols:
+  ospf:
+    name: pyats_lab
+  bgp:
+    asn: 64999
+    neighbors:
+      - ip: 192.0.2.2
+        asn: 64999
+  static:
+    - prefix: 198.51.100.0/26
+      next_hop: Null0
+    - prefix: 198.51.100.64/26
+      next_hop: Null0
+    - prefix: 198.51.100.128/26
+      next_hop: Null0
+    - prefix: 198.51.100.192/26
+      next_hop: Null0
