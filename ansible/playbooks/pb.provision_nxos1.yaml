@@ -13,11 +13,15 @@
       nxos_feature:
         feature: ospf
         state: enabled
+      tags:
+        - tested
 
     - name: enable feature bgp
       nxos_feature:
         feature: bgp
         state: enabled
+      tags:
+        - tested
 
     - name: enable interfaces
       nxos_interface:
@@ -26,6 +30,8 @@
         mode: layer3
       with_items: "{{ interfaces }}"
       when: "'Ethernet' in  item.name"
+      tags:
+        - tested
 
     - name: configure IP addresses on interfaces
       nxos_l3_interface:
@@ -33,11 +39,15 @@
         ipv4: "{{ item.ipv4 }}/{{ item.prefix_len }}"
         state: present
       with_items: "{{ interfaces }}"
+      tags:
+        - tested
 
     - name: enable router ospf
       nxos_ospf: 
        ospf: "{{ protocols.ospf.name }}"
        state: present
+      tags:
+        - tested
 
     - name: configure ospf interfaces
       nxos_interface_ospf:
@@ -47,12 +57,57 @@
         network: point-to-point
         state: present
       with_items: "{{ interfaces }}"
+      tags:
+        - tested
 
     - name: configure static routes
       nxos_static_route:
         prefix: "{{ item.prefix }}"
         next_hop: "{{ item.next_hop }}"
       with_items: "{{ protocols.static }}"
+      tags:
+        - tested
+
+    - name: configure prefix-list
+      nxos_config:
+        lines:
+          - ip prefix-list STATIC permit {{ item.prefix }}
+      with_items: "{{ protocols.static }}"
+      ignore_errors: yes
+      tags:
+        - tested
+
+    - name: configure route-map
+      nxos_config:
+        parents: route-map STATIC permit 10
+        lines:
+          - match ip address prefix-list STATIC
+      tags:
+        - tested
+
+    - name: enable BGP router
+      nxos_bgp:
+         asn: "{{ protocols.bgp.asn }}"
+         router_id: "{{ item.ipv4 }}"
+      loop: "{{ lookup('list', interfaces) }}"
+      when: "'loopback' in item.name"
+      tags:
+        - tested
+
+    - nxos_bgp_af:
+         asn: "{{ protocols.bgp.asn }}"
+         afi: ipv4
+         safi: unicast
+         redistribute: [['static', 'STATIC']]
+         vrf: default
+          
+    - nxos_bgp_neighbor:
+         asn: "{{ protocols.bgp.asn }}"
+         neighbor: "{{ item.ipv4 }}"
+         remote_as: "{{ item.asn }}"
+         update_source: "{{ item.update_source|default(omit) }}"
+         state: present
+      with_items: "{{ protocols.bgp.neighbors }}"
 
 
     - name: save configuration

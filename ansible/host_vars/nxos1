@@ -27,8 +27,9 @@ protocols:
   bgp:
     asn: 64999
     neighbors:
-      - ip: 192.0.2.2
+      - ipv4: 192.0.2.2
         asn: 64999
+        update_source: loopback0
   static:
     - prefix: 198.51.100.0/26
       next_hop: Null0
