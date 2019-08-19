@@ -1,0 +1,69 @@
+---
+- name: configure iosxe1 switch for pyats lab
+  gather_facts: no
+  hosts: iosxe1
+
+  tasks:
+    - name: verify ssh is up and running
+      wait_for:
+        port: 4922
+        timeout: 10
+
+    - name: enable interfaces
+      ios_interface:
+        name: "{{ item.name }}"
+        enabled: True
+        state: up
+      with_items: "{{ interfaces }}"
+      when: "'Ethernet' in  item.name"
+
+    - name: set hostname
+      ios_system:
+        hostname: "{{ inventory_hostname }}"
+
+    - name: configure IP addresses on interfaces
+      ios_l3_interface:
+        name: "{{ item.name }}"
+        ipv4: "{{ item.ipv4 }}/{{ item.prefix_len }}"
+        state: present
+      with_items: "{{ interfaces }}"
+
+    - name: configure static routes
+      ios_static_route:
+        prefix: "{{ item.prefix }}"
+        next_hop: "{{ item.next_hop }}"
+      with_items: "{{ protocols.static }}"
+      tags:
+        - nottested
+
+    - name: configure prefix-list
+      ios_config:
+        lines:
+          - ip prefix-list STATIC permit {{ item.prefix }}
+      with_items: "{{ protocols.static }}"
+      ignore_errors: yes
+      tags:
+        - nottested
+
+    - name: configure route-map
+      ios_config:
+        parents: route-map STATIC permit 10
+        lines:
+          - match ip address prefix-list STATIC
+      tags:
+        - nottested
+
+    - name: enable BGP router
+      ios_bgp:
+         asn: "{{ protocols.bgp.asn }}"
+         router_id: "{{ item.ipv4 }}"
+      loop: "{{ lookup('list', interfaces) }}"
+      when: "'loopback' in item.name"
+      tags:
+        - nottested
+
+    - name: save configuration
+      ios_config:
+         save_when: always
+      tags:
+        - nottested

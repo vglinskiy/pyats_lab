@@ -9,6 +9,13 @@
         port: 4822
         timeout: 10
 
+    - name: enable feature lldp
+      nxos_feature:
+        feature: lldp
+        state: enabled
+      tags:
+        - tested
+
     - name: enable feature ospf
       nxos_feature:
         feature: ospf

@@ -12,6 +12,8 @@ Vagrant.configure(2) do |config|
     nxos.vm.provider :virtualbox do |vb|
       vb.name = "nxos1"
       vb.customize ['modifyvm',:id,'--uartmode1','server','/tmp/nxos1']
+      vb.customize ['modifyvm',:id,'--nicpromisc2','allow-all']
+      vb.customize ['modifyvm',:id,'--nicpromisc3','allow-all']
       vb.customize "pre-boot", [ 
                         "storageattach", :id,
                         "--storagectl", "SATA",
@@ -36,6 +38,8 @@ Vagrant.configure(2) do |config|
     iosxe.vm.provider :virtualbox do |vb|
       vb.name = "iosxe1"
       vb.customize ['modifyvm',:id,'--uartmode1','server','/tmp/iosxe1']
+      vb.customize ['modifyvm',:id,'--nicpromisc2','allow-all']
+      vb.customize ['modifyvm',:id,'--nicpromisc3','allow-all']
     end
   end
 end

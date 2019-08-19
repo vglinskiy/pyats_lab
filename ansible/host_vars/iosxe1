@@ -1,0 +1,40 @@
+ansible_ssh_host: 127.0.0.1
+ansible_ssh_port: 4922
+ansible_ssh_user: vagrant
+ansible_ssh_pass: vagrant
+ansible_network_os: ios
+ansible_connection: network_cli
+
+interfaces:
+ - name: loopback0
+   ipv4: 192.0.2.2
+   prefix_len: 32
+ - name: GigabitEthernet2
+   ipv4: 192.0.2.129
+   prefix_len: 31
+ - name: GigabitEthernet3
+   ipv4: 192.0.2.131
+   prefix_len: 31
+
+protocols:
+  ospf: 
+    name: 999
+  bgp:
+    asn: 64999
+    neighbors:
+      - ipv4: 192.0.2.1
+        asn: 64999
+        update_source: loopback0
+  static:
+    - prefix: 203.0.113.0
+      mask: 255.255.255.192
+      next_hop: Null0
+    - prefix: 203.0.113.64
+      mask: 255.255.255.192
+      next_hop: Null0
+    - prefix: 203.0.113.128
+      mask: 255.255.255.192
+      next_hop: Null0
+    - prefix: 203.0.113.192
+      mask: 255.255.255.192
+      next_hop: Null0
