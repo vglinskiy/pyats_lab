@@ -101,14 +101,16 @@
       tags:
         - tested
 
-    - nxos_bgp_af:
+    - name: enable route redistribution
+      nxos_bgp_af:
          asn: "{{ protocols.bgp.asn }}"
          afi: ipv4
          safi: unicast
          redistribute: [['static', 'STATIC']]
          vrf: default
           
-    - nxos_bgp_neighbor:
+    - name: configure bgp neighbors
+      nxos_bgp_neighbor:
          asn: "{{ protocols.bgp.asn }}"
          neighbor: "{{ item.ipv4 }}"
          remote_as: "{{ item.asn }}"
@@ -116,6 +118,14 @@
          state: present
       with_items: "{{ protocols.bgp.neighbors }}"
 
+    - name: enable ipv4 unicast per bgp neighbor
+      nxos_bgp_neighbor_af:
+         asn: "{{ protocols.bgp.asn }}"
+         neighbor: "{{ item.ipv4 }}"
+         afi: ipv4
+         safi: unicast
+      with_items: "{{ protocols.bgp.neighbors }}"
+         
 
     - name: save configuration
       nxos_config:

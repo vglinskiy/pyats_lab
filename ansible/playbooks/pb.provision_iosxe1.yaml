@@ -9,17 +9,21 @@
         port: 4922
         timeout: 10
 
-    - name: enable interfaces
-      ios_interface:
-        name: "{{ item.name }}"
-        enabled: True
-        state: up
-      with_items: "{{ interfaces }}"
-      when: "'Ethernet' in  item.name"
-
     - name: set hostname
       ios_system:
         hostname: "{{ inventory_hostname }}"
+
+    - name: enable lldp
+      ios_lldp:
+        state: present
+
+    - name: enable interfaces
+      ios_interface:
+        name: "{{ item.name }}"
+        enabled: true
+        state: up
+      with_items: "{{ interfaces }}"
+      when: "'Ethernet' in  item.name"
 
     - name: configure IP addresses on interfaces
       ios_l3_interface:
@@ -30,11 +34,10 @@
 
     - name: configure static routes
       ios_static_route:
-        prefix: "{{ item.prefix }}"
+        prefix: "{{ item.prefix | ipaddr('network') }}"
+        mask: "{{ item.prefix | ipaddr('netmask') }}"
         next_hop: "{{ item.next_hop }}"
       with_items: "{{ protocols.static }}"
-      tags:
-        - nottested
 
     - name: configure prefix-list
       ios_config:
@@ -42,21 +45,17 @@
           - ip prefix-list STATIC permit {{ item.prefix }}
       with_items: "{{ protocols.static }}"
       ignore_errors: yes
-      tags:
-        - nottested
 
     - name: configure route-map
       ios_config:
         parents: route-map STATIC permit 10
         lines:
           - match ip address prefix-list STATIC
-      tags:
-        - nottested
-
+#add ospf and finish bgp
     - name: enable BGP router
       ios_bgp:
-         asn: "{{ protocols.bgp.asn }}"
-         router_id: "{{ item.ipv4 }}"
+        asn: "{{ protocols.bgp.asn }}"
+        router_id: "{{ item.ipv4 }}"
       loop: "{{ lookup('list', interfaces) }}"
       when: "'loopback' in item.name"
       tags:
@@ -64,6 +63,6 @@
 
     - name: save configuration
       ios_config:
-         save_when: always
+        save_when: always
       tags:
         - nottested
