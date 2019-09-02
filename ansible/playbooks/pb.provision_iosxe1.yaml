@@ -51,18 +51,47 @@
         parents: route-map STATIC permit 10
         lines:
           - match ip address prefix-list STATIC
-#add ospf and finish bgp
+
+    - name: enable router OSPF
+      ios_config:
+        lines:
+          - router ospf {{ protocols.ospf.name }}
+      
+    - name: enable OSPF on interfaces
+      ios_config:
+        lines:
+          - ip ospf network point-to-point
+          - ip ospf {{ protocols.ospf.name }} area 0.0.0.0
+        parents: interface {{ item.name }}
+      with_items: "{{ interfaces }}"
+
     - name: enable BGP router
       ios_bgp:
-        asn: "{{ protocols.bgp.asn }}"
-        router_id: "{{ item.ipv4 }}"
+        config:
+          bgp_as: "{{ protocols.bgp.asn }}"
+          router_id: "{{ item.ipv4 }}"
       loop: "{{ lookup('list', interfaces) }}"
       when: "'loopback' in item.name"
-      tags:
-        - nottested
+
+    - name: configure BGP neighbors
+      ios_bgp:
+        config:
+          bgp_as: "{{ protocols.bgp.asn }}"
+          neighbors:
+            - neighbor: "{{ item.ipv4 }}"
+              remote_as: "{{ item.asn }}"
+              update_source: "{{ item.update_source}}"
+          address_family:
+            - afi: ipv4
+              safi: unicast
+              neighbors:
+                - neighbor: "{{ item.ipv4 }}"
+                  activate: yes
+              redistribute:
+                - protocol: static
+                  route_map: STATIC
+      with_items: "{{ protocols.bgp.neighbors }}"
 
     - name: save configuration
       ios_config:
         save_when: always
-      tags:
-        - nottested
